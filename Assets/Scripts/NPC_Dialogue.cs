@@ -1,34 +1,87 @@
 using System.Collections;
 using UnityEngine;
-using TMPro; // Make sure to add this using statement for TextMeshPro
+using TMPro;
 
+/// <summary>
+/// Manages NPC dialogue system with synchronized audio playback and animations.
+/// Displays dialogue text with optional voice-over audio clips and triggers animations.
+/// On the last dialogue line, triggers a "Die" animation and disables further interactions.
+/// </summary>
 [RequireComponent(typeof(AudioSource))]
 public class NPC_Dialogue : MonoBehaviour
 {
-    // Array of dialogue lines for this NPC
+    /// <summary>
+    /// Array of dialogue lines that this NPC will speak.
+    /// Each line is displayed in sequence when the player interacts.
+    /// </summary>
     public string[] dialogueLines;
 
-    // Array of AudioClips that correspond to each dialogue line (optional; lengths can differ)
+    /// <summary>
+    /// Array of audio clips corresponding to each dialogue line.
+    /// Lengths can differ from dialogueLines. If no clip exists for a line, uses fallback timing.
+    /// </summary>
     public AudioClip[] dialogueAudioClips;
 
-    // Reference to the UI Text element where dialogue will be displayed
+    /// <summary>
+    /// TextMeshPro UI element where the current dialogue line is displayed.
+    /// </summary>
     public TextMeshProUGUI dialogueText;
+
+    /// <summary>
+    /// TextMeshPro UI element for the interaction prompt (e.g., "Press E").
+    /// Disabled when dialogue panel is active.
+    /// </summary>
     public TextMeshProUGUI press;
 
-    // Reference to the entire Dialogue Panel GameObject
+    /// <summary>
+    /// The dialogue panel GameObject that contains the dialogue UI elements.
+    /// Activated when dialogue starts and deactivated when it ends.
+    /// </summary>
     public GameObject dialoguePanel;
 
-    // Optional Animator to trigger "Die" on the last line
+    /// <summary>
+    /// Animator component for triggering the "Die" animation on the last dialogue line.
+    /// Optional - will be auto-assigned if not set in inspector.
+    /// </summary>
     public Animator animator;
 
+    /// <summary>
+    /// AudioSource component used to play dialogue audio clips.
+    /// </summary>
     private AudioSource audioSource;
+
+    /// <summary>
+    /// Active coroutine playing the current dialogue line.
+    /// Used to track and stop ongoing playback.
+    /// </summary>
     private Coroutine playCoroutine;
+
+    /// <summary>
+    /// The NPC's collider component, disabled after the final dialogue line.
+    /// </summary>
     private Collider npcCollider;
 
+    /// <summary>
+    /// Index of the currently active dialogue line.
+    /// </summary>
     private int currentLineIndex = 0;
+
+    /// <summary>
+    /// Flag indicating whether the player is within interaction range.
+    /// Always true in this implementation.
+    /// </summary>
     private bool playerInRange = true;
+
+    /// <summary>
+    /// Flag indicating whether the NPC has completed all dialogue.
+    /// Set to true after the last line, preventing further interactions.
+    /// </summary>
     private bool isDead = false;
 
+    /// <summary>
+    /// Initializes the NPC dialogue system.
+    /// Sets up the AudioSource, Animator, and Collider components.
+    /// </summary>
     private void Awake()
     {
         audioSource = GetComponent<AudioSource>();
@@ -53,8 +106,11 @@ public class NPC_Dialogue : MonoBehaviour
         }
     }
 
-        // Update is called once per frame
-        void Update()
+    /// <summary>
+    /// Handles player input for dialogue interaction.
+    /// Pressing 'E' starts dialogue, skips lines, or advances to the next line.
+    /// </summary>
+    void Update()
         {
             // Check for player input (e.g., pressing "E") to start/continue/skip dialogue
             if (playerInRange && Input.GetKeyDown(KeyCode.E) && !isDead)
@@ -96,6 +152,10 @@ public class NPC_Dialogue : MonoBehaviour
             }
         }
 
+    /// <summary>
+    /// Displays the next dialogue line if available, otherwise ends the dialogue.
+    /// Stops any currently playing line before starting the next.
+    /// </summary>
     private void DisplayNextLine()
     {
         if (currentLineIndex < dialogueLines.Length)
@@ -117,6 +177,13 @@ public class NPC_Dialogue : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Coroutine that plays a single dialogue line with synchronized audio.
+    /// Waits for the audio to finish (or uses fallback timing) before auto-advancing.
+    /// On the last line, triggers the "Die" animation and disables the collider.
+    /// </summary>
+    /// <param name="index">Index of the dialogue line to play.</param>
+    /// <returns>IEnumerator for coroutine execution.</returns>
     private IEnumerator PlayLineCoroutine(int index)
     {
         dialogueText.text = dialogueLines[index];
@@ -174,6 +241,9 @@ public class NPC_Dialogue : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Ends the dialogue by stopping playback, hiding the dialogue panel, and resetting the line index.
+    /// </summary>
     private void EndDialogue()
     {
         StopPlayback();
@@ -181,6 +251,9 @@ public class NPC_Dialogue : MonoBehaviour
         currentLineIndex = 0; // Reset for next interaction
     }
 
+    /// <summary>
+    /// Stops any active dialogue playback coroutine and audio.
+    /// </summary>
     private void StopPlayback()
     {
         if (playCoroutine != null)
